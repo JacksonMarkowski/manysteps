@@ -4,23 +4,27 @@ from manysteps import Recipe
 
 r = Recipe()
 
-@r.step_dep(deps=[])
+
+@r.step(depends=[])
 async def my_step_a():
     print("my_step_a enter")
     await asyncio.sleep(1)
     print("my_step_a exit")
 
-@r.step_dep(deps=[my_step_a])
+
+@r.step(depends=[my_step_a])
 async def my_step_b():
     print("my_step_b enter")
     await asyncio.sleep(5)
     print("my_step_b exit")
 
-@r.step_dep(deps=[my_step_a])
+
+@r.step(depends=[my_step_a])
 async def my_step_c():
     print("my_step_c enter")
     await asyncio.sleep(5)
     print("my_step_c exit")
+
 
 # @manysteps.step(abc)
 # @r.step()
@@ -43,6 +47,7 @@ async def my_step_c():
 #     print("another one")
 #     await one()
 
+
 async def main():
     # print(my_step1.__name__)
     # await bla()
@@ -60,6 +65,7 @@ async def main():
     # await step1()
     # await one()
     # await another_one()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
