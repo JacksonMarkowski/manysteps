@@ -7,40 +7,42 @@ class Recipe:
         self.steps = {}
         pass
 
-    def step(self, *, depends=[]):
+    def step(self, _func=None, *, depends=[]):
         def step_decorator(func):
             self.steps[func] = depends
             return func
 
-        return step_decorator
+        if _func is None:
+            return step_decorator
+        else:
+            return step_decorator(_func)
 
     async def run(self):
         tasks = {}
-        for step, step_ in self.steps.items():
-            tasks = self.start_step(tasks, step)
+        for step in self.steps.keys():
+            tasks = self._start_step(step, tasks)
 
-        final_tasks = []
-        for step, step_task in tasks.items():
-            final_tasks.append(step_task)
+        all_tasks = []
+        for step_task in tasks.values():
+            all_tasks.append(step_task)
 
-        if len(final_tasks) > 0:
-            await asyncio.gather(*final_tasks)
+        if len(all_tasks) > 0:
+            await asyncio.gather(*all_tasks)
 
-    def start_step(self, tasks, c):
-        if c in tasks:
+    def _start_step(self, step, tasks):
+        if step in tasks:
             return tasks
 
-        c_d_tasks = []
-        for c_d in self.steps[c]:
-            tasks = self.start_step(tasks, c_d)
-            c_d_tasks.append(tasks[c_d])
+        deps_tasks = []
+        for dep in self.steps[step]:
+            tasks = self._start_step(dep, tasks)
+            deps_tasks.append(tasks[dep])
 
-        async def step_dec():
-            if len(c_d_tasks) > 0:
-                await asyncio.gather(*c_d_tasks)
-            await c()
+        async def step_wrapper():
+            if len(deps_tasks) > 0:
+                await asyncio.gather(*deps_tasks)
+            await step()
 
-        # print(f"starting {c}")
-        t = asyncio.create_task(step_dec())
-        tasks[c] = t
+        task = asyncio.create_task(step_wrapper())
+        tasks[step] = task
         return tasks
